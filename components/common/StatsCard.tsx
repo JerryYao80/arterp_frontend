@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, SvgIcon } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
 
 interface StatsCardProps {
@@ -22,13 +22,9 @@ export default function StatsCard({ title, value, icon, trend }: StatsCardProps)
           <Typography variant="h6" color="textSecondary">
             {title}
           </Typography>
-          <SvgIcon
-            component={icon as any}
-            sx={{
-              fontSize: 40,
-              color: 'primary.main',
-            }}
-          />
+          <Box sx={{ color: 'primary.main', '& svg': { fontSize: 40 } }}>
+            {icon}
+          </Box>
         </Box>
         <Typography variant="h4" component="div" gutterBottom>
           {typeof value === 'number' ? value.toLocaleString() : value}
