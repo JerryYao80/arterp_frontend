@@ -7,6 +7,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { SnackbarProvider } from 'notistack';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -31,18 +33,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className={inter.className}>
         <Provider store={store}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <SnackbarProvider
-              maxSnack={3}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-            >
-              {children}
-            </SnackbarProvider>
-          </ThemeProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <SnackbarProvider
+                maxSnack={3}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                {children}
+              </SnackbarProvider>
+            </ThemeProvider>
+          </LocalizationProvider>
         </Provider>
       </body>
     </html>

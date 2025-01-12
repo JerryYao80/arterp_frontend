@@ -29,6 +29,12 @@ interface Customer {
   preferredLanguage: string;
   communicationPreference: string;
   marketingConsent: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface CustomerFormData extends Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'birthDate'> {
+  birthDate: Date | null;
 }
 
 interface PageResponse<T> {
@@ -65,19 +71,25 @@ export const customerApi = baseApi.injectEndpoints({
       query: (id) => `/customers/${id}`,
       providesTags: ['Customer'],
     }),
-    createCustomer: builder.mutation<ApiResponse<Customer>, Partial<Customer>>({
+    createCustomer: builder.mutation<ApiResponse<Customer>, CustomerFormData>({
       query: (customer) => ({
         url: '/customers',
         method: 'POST',
-        body: customer,
+        body: {
+          ...customer,
+          birthDate: customer.birthDate ? customer.birthDate.toISOString().split('T')[0] : null,
+        },
       }),
       invalidatesTags: ['Customer'],
     }),
-    updateCustomer: builder.mutation<ApiResponse<Customer>, { id: number; customer: Partial<Customer> }>({
+    updateCustomer: builder.mutation<ApiResponse<Customer>, { id: number; customer: Partial<CustomerFormData> }>({
       query: ({ id, customer }) => ({
         url: `/customers/${id}`,
         method: 'PUT',
-        body: customer,
+        body: {
+          ...customer,
+          birthDate: customer.birthDate ? customer.birthDate.toISOString().split('T')[0] : undefined,
+        },
       }),
       invalidatesTags: ['Customer'],
     }),
