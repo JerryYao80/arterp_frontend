@@ -37,14 +37,22 @@ export default function RegisterPage() {
 
     try {
       const response = await register(formData).unwrap();
+      console.log('Registration response:', response);
       if (response.success) {
         dispatch(setCredentials({ token: response.data.token }));
         router.push('/dashboard');
       } else {
-        setError(response.message);
+        setError(response.message || 'Registration failed');
       }
     } catch (err: any) {
-      setError(err.data?.message || 'An error occurred during registration');
+      console.error('Registration error:', err);
+      if (err.data) {
+        setError(err.data.message || 'Server error during registration');
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('An error occurred during registration');
+      }
     }
   };
 
