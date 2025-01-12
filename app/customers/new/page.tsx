@@ -29,30 +29,24 @@ interface CustomerFormData {
   name: string;
   gender: string;
   birthDate: Date | null;
-  phone: string;
-  email: string;
+  address: string;
+  occupation: string;
   idType: string;
   idNumber: string;
-  nationality: string;
-  maritalStatus: string;
+  source: string;
+  phone: string;
+  emergencyContact: string;
+  donorRequirement?: string;
+  gestationRequirement?: string;
+  budget: number;
+  expectedStartTime: Date | null;
+  expectedEndTime: Date | null;
+  recommendedPlan: string;
   medicalHistory?: string;
   familyHistory?: string;
-  geneticScreening?: string;
   status: string;
-  customerType: string;
-  requirements?: string;
-  preferences?: string;
   riskLevel: string;
-  addresses: string[];
-  documentUrls: string[];
   notes?: string;
-  hasInsurance: boolean;
-  insuranceInformation?: string;
-  source: string;
-  emergencyContact?: string;
-  preferredLanguage: string;
-  communicationPreference: string;
-  marketingConsent: boolean;
 }
 
 const genderOptions = [
@@ -104,6 +98,12 @@ const communicationOptions = [
   { value: 'SMS', label: 'SMS' },
 ];
 
+const recommendedPlanOptions = [
+  { value: 'PLAN_1', label: '方案一' },
+  { value: 'PLAN_2', label: '方案二' },
+  { value: 'PLAN_3', label: '方案三' },
+];
+
 export default function NewCustomerPage() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
@@ -114,14 +114,11 @@ export default function NewCustomerPage() {
       gender: 'MALE',
       birthDate: null,
       status: 'ACTIVE',
-      customerType: 'INDIVIDUAL',
       riskLevel: 'LOW',
-      addresses: [],
-      documentUrls: [],
-      hasInsurance: false,
-      marketingConsent: false,
-      preferredLanguage: 'ENGLISH',
-      communicationPreference: 'EMAIL',
+      budget: 0,
+      expectedStartTime: null,
+      expectedEndTime: null,
+      recommendedPlan: 'PLAN_1',
     }
   });
 
@@ -231,30 +228,36 @@ export default function NewCustomerPage() {
 
               <Grid item xs={12} md={6}>
                 <Controller
-                  name="email"
+                  name="address"
                   control={control}
-                  rules={{
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
-                    }
-                  }}
+                  rules={{ required: 'Address is required' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Email"
+                      label="Address"
                       fullWidth
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
+                      error={!!errors.address}
+                      helperText={errors.address?.message}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Identification */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Identification</Typography>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="occupation"
+                  control={control}
+                  rules={{ required: 'Occupation is required' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Occupation"
+                      fullWidth
+                      error={!!errors.occupation}
+                      helperText={errors.occupation?.message}
+                    />
+                  )}
+                />
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -300,16 +303,13 @@ export default function NewCustomerPage() {
 
               <Grid item xs={12} md={6}>
                 <Controller
-                  name="nationality"
+                  name="source"
                   control={control}
-                  rules={{ required: 'Nationality is required' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Nationality"
+                      label="Source"
                       fullWidth
-                      error={!!errors.nationality}
-                      helperText={errors.nationality?.message}
                     />
                   )}
                 />
@@ -317,16 +317,135 @@ export default function NewCustomerPage() {
 
               <Grid item xs={12} md={6}>
                 <Controller
-                  name="maritalStatus"
+                  name="emergencyContact"
                   control={control}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      select
-                      label="Marital Status"
+                      label="Emergency Contact"
                       fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Service Requirements */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>Service Requirements</Typography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="donorRequirement"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Donor Requirement"
+                      multiline
+                      rows={4}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="gestationRequirement"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Gestation Requirement"
+                      multiline
+                      rows={4}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="budget"
+                  control={control}
+                  rules={{ 
+                    required: 'Budget is required',
+                    min: { value: 0, message: 'Budget must be positive' }
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Budget"
+                      type="number"
+                      fullWidth
+                      error={!!errors.budget}
+                      helperText={errors.budget?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <Controller
+                    name="expectedStartTime"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="Expected Start Time"
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!errors.expectedStartTime,
+                            helperText: errors.expectedStartTime?.message
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <Controller
+                    name="expectedEndTime"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="Expected End Time"
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!errors.expectedEndTime,
+                            helperText: errors.expectedEndTime?.message
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="recommendedPlan"
+                  control={control}
+                  rules={{ required: 'Recommended Plan is required' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Recommended Plan"
+                      fullWidth
+                      error={!!errors.recommendedPlan}
+                      helperText={errors.recommendedPlan?.message}
                     >
-                      {maritalStatusOptions.map(option => (
+                      {recommendedPlanOptions.map(option => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
                         </MenuItem>
@@ -373,262 +492,9 @@ export default function NewCustomerPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={12}>
-                <Controller
-                  name="geneticScreening"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Genetic Screening"
-                      multiline
-                      rows={4}
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              {/* Customer Profile */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Customer Profile</Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="customerType"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      select
-                      label="Customer Type"
-                      fullWidth
-                    >
-                      {customerTypeOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="riskLevel"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      select
-                      label="Risk Level"
-                      fullWidth
-                    >
-                      {riskLevelOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      select
-                      label="Status"
-                      fullWidth
-                    >
-                      {statusOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="source"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Source"
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              {/* Requirements and Preferences */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Requirements and Preferences</Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="requirements"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Requirements"
-                      multiline
-                      rows={4}
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="preferences"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Preferences"
-                      multiline
-                      rows={4}
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              {/* Insurance Information */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Insurance Information</Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="hasInsurance"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.value}
-                          onChange={field.onChange}
-                        />
-                      }
-                      label="Has Insurance"
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="insuranceInformation"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Insurance Information"
-                      multiline
-                      rows={4}
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              {/* Contact Preferences */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Contact Preferences</Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="preferredLanguage"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      select
-                      label="Preferred Language"
-                      fullWidth
-                    >
-                      {languageOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="communicationPreference"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      select
-                      label="Communication Preference"
-                      fullWidth
-                    >
-                      {communicationOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="emergencyContact"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Emergency Contact"
-                      fullWidth
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="marketingConsent"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={field.value}
-                          onChange={field.onChange}
-                        />
-                      }
-                      label="Marketing Consent"
-                    />
-                  )}
-                />
-              </Grid>
-
               {/* Notes */}
               <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>Additional Notes</Typography>
+                <Typography variant="h6" gutterBottom>Notes</Typography>
               </Grid>
 
               <Grid item xs={12}>
