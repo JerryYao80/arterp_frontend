@@ -8,7 +8,6 @@ import {
   Typography,
   TextField,
   Button,
-  Link as MuiLink,
   Grid,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -159,10 +158,17 @@ export default function RegisterPage() {
               Sign Up
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link href="/auth/login" passHref>
-                <MuiLink variant="body2">
-                  Already have an account? Sign in
-                </MuiLink>
+              <Link 
+                href="/auth/login"
+                style={{ 
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Already have an account? Sign in
               </Link>
             </Box>
           </Box>

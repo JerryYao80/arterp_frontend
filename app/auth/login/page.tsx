@@ -8,7 +8,6 @@ import {
   Typography,
   TextField,
   Button,
-  Link as MuiLink,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -104,7 +103,7 @@ export default function LoginPage() {
               onChange={handleChange}
             />
             {error && (
-              <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              <Typography color="error" sx={{ mt: 2 }}>
                 {error}
               </Typography>
             )}
@@ -117,10 +116,17 @@ export default function LoginPage() {
               Sign In
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link href="/auth/register" passHref>
-                <MuiLink variant="body2">
-                  {"Don't have an account? Sign Up"}
-                </MuiLink>
+              <Link 
+                href="/auth/register" 
+                style={{ 
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {"Don't have an account? Sign Up"}
               </Link>
             </Box>
           </Box>
