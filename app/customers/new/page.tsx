@@ -47,6 +47,7 @@ interface CustomerFormData {
   status: string;
   riskLevel: string;
   notes?: string;
+  maritalStatus: string;
 }
 
 const genderOptions = [
@@ -62,10 +63,9 @@ const idTypeOptions = [
 ];
 
 const maritalStatusOptions = [
-  { value: 'SINGLE', label: 'Single' },
-  { value: 'MARRIED', label: 'Married' },
-  { value: 'DIVORCED', label: 'Divorced' },
-  { value: 'WIDOWED', label: 'Widowed' },
+  { value: 'SINGLE', label: '单身' },
+  { value: 'MARRIED', label: '已婚' },
+  { value: 'MINORITY', label: '少数' },
 ];
 
 const customerTypeOptions = [
@@ -81,9 +81,10 @@ const riskLevelOptions = [
 ];
 
 const statusOptions = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'INACTIVE', label: 'Inactive' },
-  { value: 'PENDING', label: 'Pending' },
+  { value: 'UNFOLLOW', label: '未跟进' },
+  { value: 'FOLLOWING', label: '跟进中' },
+  { value: 'FOLLOWED', label: '已跟进' },
+  { value: 'CONTRACTED', label: '已签约' },
 ];
 
 const languageOptions = [
@@ -113,8 +114,8 @@ export default function NewCustomerPage() {
     defaultValues: {
       gender: 'MALE',
       birthDate: null,
-      status: 'ACTIVE',
-      riskLevel: 'LOW',
+      status: 'UNFOLLOW',
+      maritalStatus: 'SINGLE',
       budget: 0,
       expectedStartTime: null,
       expectedEndTime: null,
@@ -310,6 +311,8 @@ export default function NewCustomerPage() {
                       {...field}
                       label="Source"
                       fullWidth
+                      error={!!errors.source}
+                      helperText={errors.source?.message}
                     />
                   )}
                 />
@@ -324,6 +327,8 @@ export default function NewCustomerPage() {
                       {...field}
                       label="Emergency Contact"
                       fullWidth
+                      error={!!errors.emergencyContact}
+                      helperText={errors.emergencyContact?.message}
                     />
                   )}
                 />
@@ -509,6 +514,54 @@ export default function NewCustomerPage() {
                       rows={4}
                       fullWidth
                     />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="status"
+                  control={control}
+                  rules={{ required: '跟踪状态是必填的' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="跟踪状态"
+                      fullWidth
+                      error={!!errors.status}
+                      helperText={errors.status?.message}
+                    >
+                      {statusOptions.map(option => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="maritalStatus"
+                  control={control}
+                  rules={{ required: '婚姻状态是必填的' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="婚姻状态"
+                      fullWidth
+                      error={!!errors.maritalStatus}
+                      helperText={errors.maritalStatus?.message}
+                    >
+                      {maritalStatusOptions.map(option => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   )}
                 />
               </Grid>
