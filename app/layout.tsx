@@ -2,13 +2,14 @@
 
 import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
+import { createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { SnackbarProvider } from 'notistack';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
