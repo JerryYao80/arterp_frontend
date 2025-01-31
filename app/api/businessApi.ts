@@ -1,197 +1,157 @@
-import { baseApi } from './baseApi';
+import axios from 'axios';
+import { BusinessDTO, BusinessStatusRecordDTO, MarketingRecordDTO, MedicalRecordDTO } from '../types/business';
+import { ApiResponse, PageResponse, BusinessProcess } from '../types/api';
+import { BaseQueryFn } from '@reduxjs/toolkit/query';
 
-interface StageTask {
-  id?: number;
-  name: string;
-  status: string;
-  sequence: number;
-  startDate: string;
-  expectedEndDate?: string;
-  actualEndDate?: string;
-  budget: number;
-  spent: number;
-  assignedResourceIds: number[];
-  description?: string;
-  notes?: string;
-  documentUrls: string[];
-  taskType: string;
-  result?: string;
-  nextAction?: string;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-interface ProcessStage {
-  id?: number;
-  name: string;
-  status: string;
-  sequence: number;
-  startDate: string;
-  expectedEndDate?: string;
-  actualEndDate?: string;
-  budget: number;
-  spent: number;
-  assignedResourceIds: number[];
-  tasks: StageTask[];
-  notes?: string;
-  documentUrls: string[];
-}
+const businessApiBase = {
+    // 业务基本操作
+    createBusiness: async (business: BusinessDTO) => {
+        const response = await axios.post(`${API_URL}/api/businesses`, business);
+        return response.data;
+    },
 
-interface BusinessProcess {
-  id?: number;
-  customerId: number;
-  processType: string;
-  status: string;
-  startDate: string;
-  expectedEndDate?: string;
-  actualEndDate?: string;
-  totalBudget: number;
-  currentSpent: number;
-  assignedResourceIds: number[];
-  stages: ProcessStage[];
-  notes?: string;
-  riskLevel: string;
-  documentUrls: string[];
-}
+    updateBusiness: async (id: number, business: BusinessDTO) => {
+        const response = await axios.put(`${API_URL}/api/businesses/${id}`, business);
+        return response.data;
+    },
 
-interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
+    getBusiness: async (id: number) => {
+        const response = await axios.get(`${API_URL}/api/businesses/${id}`);
+        return response.data;
+    },
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  code: number;
-}
+    getBusinessesByCustomer: async (customerId: number) => {
+        const response = await axios.get(`${API_URL}/api/businesses/customer/${customerId}`);
+        return response.data;
+    },
 
-interface BusinessStats {
-  activeProcesses: number;
-  processGrowth: number;
-  typeDistribution: Record<string, number>;
-  statusDistribution: Record<string, number>;
-  riskDistribution: Record<string, number>;
-}
+    getBusinessesByPhase: async (phase: string) => {
+        const response = await axios.get(`${API_URL}/api/businesses/phase/${phase}`);
+        return response.data;
+    },
 
-export const businessApi = baseApi.injectEndpoints({
-  endpoints: (builder) => ({
-    searchProcesses: builder.query<
-      ApiResponse<PageResponse<BusinessProcess>>,
-      { search?: string; page?: number; size?: number }
-    >({
-      query: ({ search = '', page = 0, size = 10 }) =>
-        `/business/search?search=${search}&page=${page}&size=${size}`,
-      providesTags: ['Business'],
+    getBusinessesByStatus: async (status: string) => {
+        const response = await axios.get(`${API_URL}/api/businesses/status/${status}`);
+        return response.data;
+    },
+
+    deleteBusiness: async (id: number) => {
+        await axios.delete(`${API_URL}/api/businesses/${id}`);
+    },
+
+    // 业务状态记录操作
+    createStatusRecord: async (record: BusinessStatusRecordDTO) => {
+        const response = await axios.post(`${API_URL}/api/business-status-records`, record);
+        return response.data;
+    },
+
+    getBusinessStatusRecords: async (businessId: number) => {
+        const response = await axios.get(`${API_URL}/api/business-status-records/business/${businessId}`);
+        return response.data;
+    },
+
+    getAbnormalStatusRecords: async (businessId: number) => {
+        const response = await axios.get(`${API_URL}/api/business-status-records/business/${businessId}/abnormal`);
+        return response.data;
+    },
+
+    updateStatusRecord: async (id: number, record: BusinessStatusRecordDTO) => {
+        const response = await axios.put(`${API_URL}/api/business-status-records/${id}`, record);
+        return response.data;
+    },
+
+    deleteStatusRecord: async (id: number) => {
+        await axios.delete(`${API_URL}/api/business-status-records/${id}`);
+    },
+
+    // 营销记录操作
+    createMarketingRecord: async (record: MarketingRecordDTO) => {
+        const response = await axios.post(`${API_URL}/api/marketing-records`, record);
+        return response.data;
+    },
+
+    getMarketingRecords: async (businessId: number) => {
+        const response = await axios.get(`${API_URL}/api/marketing-records/business/${businessId}`);
+        return response.data;
+    },
+
+    updateMarketingRecord: async (id: number, record: MarketingRecordDTO) => {
+        const response = await axios.put(`${API_URL}/api/marketing-records/${id}`, record);
+        return response.data;
+    },
+
+    deleteMarketingRecord: async (id: number) => {
+        await axios.delete(`${API_URL}/api/marketing-records/${id}`);
+    },
+
+    // 医疗记录操作
+    createMedicalRecord: async (record: MedicalRecordDTO) => {
+        const response = await axios.post(`${API_URL}/api/medical-records`, record);
+        return response.data;
+    },
+
+    getMedicalRecords: async (businessId: number) => {
+        const response = await axios.get(`${API_URL}/api/medical-records/business/${businessId}`);
+        return response.data;
+    },
+
+    getMedicalRecordsByType: async (businessId: number, recordType: string) => {
+        const response = await axios.get(`${API_URL}/api/medical-records/business/${businessId}/type/${recordType}`);
+        return response.data;
+    },
+
+    getAbnormalMedicalRecords: async (businessId: number) => {
+        const response = await axios.get(`${API_URL}/api/medical-records/business/${businessId}/abnormal`);
+        return response.data;
+    },
+
+    updateMedicalRecord: async (id: number, record: MedicalRecordDTO) => {
+        const response = await axios.put(`${API_URL}/api/medical-records/${id}`, record);
+        return response.data;
+    },
+
+    deleteMedicalRecord: async (id: number) => {
+        await axios.delete(`${API_URL}/api/medical-records/${id}`);
+    },
+
+    // 统计数据
+    getPhaseStatistics: async () => {
+        const response = await axios.get(`${API_URL}/api/businesses/statistics/phase`);
+        return response.data;
+    },
+
+    getLocationStatistics: async () => {
+        const response = await axios.get(`${API_URL}/api/businesses/statistics/location`);
+        return response.data;
+    },
+
+    getTypeStatistics: async () => {
+        const response = await axios.get(`${API_URL}/api/businesses/statistics/type`);
+        return response.data;
+    },
+
+    getChannelStatistics: async () => {
+        const response = await axios.get(`${API_URL}/api/marketing-records/statistics/channel`);
+        return response.data;
+    },
+
+    getConversionSourceStatistics: async () => {
+        const response = await axios.get(`${API_URL}/api/marketing-records/statistics/conversion-source`);
+        return response.data;
+    }
+};
+
+export const businessApi = {
+    ...businessApiBase,
+    // RTK Query endpoints
+    endpoints: (builder: any) => ({
+        searchProcesses: builder.query<ApiResponse<PageResponse<BusinessProcess>>, { search?: string; page?: number; size?: number }>({
+            query: ({ search = '', page = 0, size = 10 }) =>
+                `/business/search?search=${search}&page=${page}&size=${size}`,
+            providesTags: ['Business'],
+        }),
+        // ... 其他 RTK Query endpoints
     }),
-    getProcessesByCustomer: builder.query<
-      ApiResponse<PageResponse<BusinessProcess>>,
-      { customerId: number; search?: string; page?: number; size?: number }
-    >({
-      query: ({ customerId, search = '', page = 0, size = 10 }) =>
-        `/business/customer/${customerId}?search=${search}&page=${page}&size=${size}`,
-      providesTags: ['Business'],
-    }),
-    getProcess: builder.query<ApiResponse<BusinessProcess>, number>({
-      query: (id) => `/business/${id}`,
-      providesTags: ['Business'],
-    }),
-    createProcess: builder.mutation<ApiResponse<BusinessProcess>, BusinessProcess>({
-      query: (process) => ({
-        url: '/business',
-        method: 'POST',
-        body: process,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    updateProcess: builder.mutation<
-      ApiResponse<BusinessProcess>,
-      { id: number; process: Partial<BusinessProcess> }
-    >({
-      query: ({ id, process }) => ({
-        url: `/business/${id}`,
-        method: 'PUT',
-        body: process,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    deleteProcess: builder.mutation<ApiResponse<void>, number>({
-      query: (id) => ({
-        url: `/business/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    // Stage endpoints
-    createStage: builder.mutation<ApiResponse<ProcessStage>, { processId: number; stage: ProcessStage }>({
-      query: ({ processId, stage }) => ({
-        url: `/business/${processId}/stages`,
-        method: 'POST',
-        body: stage,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    updateStage: builder.mutation<
-      ApiResponse<ProcessStage>,
-      { processId: number; stageId: number; stage: Partial<ProcessStage> }
-    >({
-      query: ({ processId, stageId, stage }) => ({
-        url: `/business/${processId}/stages/${stageId}`,
-        method: 'PUT',
-        body: stage,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    deleteStage: builder.mutation<ApiResponse<void>, number>({
-      query: (stageId) => ({
-        url: `/business/stages/${stageId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    // Task endpoints
-    createTask: builder.mutation<
-      ApiResponse<StageTask>,
-      { processId: number; stageId: number; task: StageTask }
-    >({
-      query: ({ processId, stageId, task }) => ({
-        url: `/business/${processId}/stages/${stageId}/tasks`,
-        method: 'POST',
-        body: task,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    updateTask: builder.mutation<
-      ApiResponse<StageTask>,
-      { processId: number; stageId: number; taskId: number; task: Partial<StageTask> }
-    >({
-      query: ({ processId, stageId, taskId, task }) => ({
-        url: `/business/${processId}/stages/${stageId}/tasks/${taskId}`,
-        method: 'PUT',
-        body: task,
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    deleteTask: builder.mutation<ApiResponse<void>, number>({
-      query: (taskId) => ({
-        url: `/business/tasks/${taskId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Business'],
-    }),
-    // Statistics endpoints
-    getProcessTypeDistribution: builder.query<ApiResponse<Record<string, number>>, void>({
-      query: () => '/business/stats/process-type',
-    }),
-    getStatusDistribution: builder.query<ApiResponse<Record<string, number>>, void>({
-      query: () => '/business/stats/status',
-    }),
-    getRiskLevelDistribution: builder.query<ApiResponse<Record<string, number>>, void>({
-      query: () => '/business/stats/risk-level',
-    }),
-    getBusinessStats: builder.query<ApiResponse<BusinessStats>, void>({
-      query: () => '/stats',
-    }),
-  }),
-}); 
+}; 

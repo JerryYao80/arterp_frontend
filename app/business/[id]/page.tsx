@@ -1,388 +1,230 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  Box,
-  Grid,
-  Paper,
-  Typography,
-  Divider,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import PageHeader from '../../components/common/PageHeader';
-import { businessApi } from '../../api/businessApi';
-import { customerApi } from '../../api/customerApi';
-import { useToast } from '../../hooks/useToast';
-import { useConfirm } from '../../hooks/useConfirm';
-import MainLayout from '../../components/layout/MainLayout';
+import React, { useEffect, useState } from 'react';
+import { Card, Descriptions, Timeline, Tag, Row, Col, Table, Button, Modal, message } from 'antd';
+import { businessApi } from '../../../api/businessApi';
+import { BusinessDTO, BusinessPhase, BusinessStatus, BusinessStatusRecordDTO, MarketingRecordDTO, MedicalRecordDTO } from '../../../types/business';
+import { useParams, useRouter } from 'next/navigation';
 
-interface BusinessProcessDetailsProps {
-  params: {
-    id: string;
-  };
-}
+const BusinessDetail = () => {
+    const params = useParams();
+    const router = useRouter();
+    const [business, setBusiness] = useState<BusinessDTO | null>(null);
+    const [statusRecords, setStatusRecords] = useState<BusinessStatusRecordDTO[]>([]);
+    const [marketingRecords, setMarketingRecords] = useState<MarketingRecordDTO[]>([]);
+    const [medicalRecords, setMedicalRecords] = useState<MedicalRecordDTO[]>([]);
+    const [loading, setLoading] = useState(true);
 
-export default function BusinessProcessDetailsPage({ params }: BusinessProcessDetailsProps) {
-  const router = useRouter();
-  const { showSuccess, showError } = useToast();
-  const { confirm } = useConfirm();
-  const id = parseInt(params.id);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const businessId = Number(params.id);
+                const [businessData, statusData, marketingData, medicalData] = await Promise.all([
+                    businessApi.getBusiness(businessId),
+                    businessApi.getBusinessStatusRecords(businessId),
+                    businessApi.getMarketingRecords(businessId),
+                    businessApi.getMedicalRecords(businessId)
+                ]);
 
-  const { data: processData, isLoading: isLoadingProcess } = businessApi.useGetProcessQuery(id);
-  const { data: customerData, isLoading: isLoadingCustomer } = customerApi.useGetCustomerQuery(
-    processData?.data.customerId || 0,
-    { skip: !processData?.data.customerId }
-  );
-  const [deleteStage] = businessApi.useDeleteStageMutation();
-  const [deleteTask] = businessApi.useDeleteTaskMutation();
+                setBusiness(businessData);
+                setStatusRecords(statusData);
+                setMarketingRecords(marketingData);
+                setMedicalRecords(medicalData);
+            } catch (error) {
+                console.error('Failed to fetch business details:', error);
+                message.error('获取业务详情失败');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  if (isLoadingProcess || isLoadingCustomer) {
-    return <div>Loading...</div>;
-  }
+        fetchData();
+    }, [params.id]);
 
-  const process = processData?.data;
-  const customer = customerData?.data;
-
-  if (!process) {
-    return <div>Process not found</div>;
-  }
-
-  const handleEdit = () => {
-    router.push(`/business/${id}/edit`);
-  };
-
-  const handleDeleteStage = async (stageId: number) => {
-    const confirmed = await confirm({
-      title: 'Delete Stage',
-      message: 'Are you sure you want to delete this stage? This action cannot be undone.',
-      confirmLabel: 'Delete',
-      cancelLabel: 'Cancel',
-    });
-
-    if (confirmed) {
-      try {
-        await deleteStage(stageId).unwrap();
-        showSuccess('Stage deleted successfully');
-      } catch (error) {
-        showError('Failed to delete stage');
-      }
+    if (loading || !business) {
+        return <div>Loading...</div>;
     }
-  };
 
-  const handleDeleteTask = async (taskId: number) => {
-    const confirmed = await confirm({
-      title: 'Delete Task',
-      message: 'Are you sure you want to delete this task? This action cannot be undone.',
-      confirmLabel: 'Delete',
-      cancelLabel: 'Cancel',
-    });
+    const getPhaseColor = (phase: BusinessPhase) => {
+        const colors: Record<BusinessPhase, string> = {
+            [BusinessPhase.ADVERTISING]: 'blue',
+            [BusinessPhase.OFFLINE_CONTACT]: 'cyan',
+            [BusinessPhase.REFERRAL]: 'geekblue',
+            [BusinessPhase.PACKAGE_DESIGN]: 'purple',
+            [BusinessPhase.CONTRACT_SIGNING]: 'magenta',
+            [BusinessPhase.IVF]: 'red',
+            [BusinessPhase.EMBRYO_TRANSFER]: 'volcano',
+            [BusinessPhase.PREGNANCY_CARE]: 'orange',
+            [BusinessPhase.DELIVERY]: 'gold',
+            [BusinessPhase.PATERNITY_TEST]: 'lime',
+            [BusinessPhase.OVERSEAS_CARE]: 'green',
+            [BusinessPhase.IMMIGRATION_SETTLEMENT]: 'cyan'
+        };
+        return colors[phase] || 'default';
+    };
 
-    if (confirmed) {
-      try {
-        await deleteTask(taskId).unwrap();
-        showSuccess('Task deleted successfully');
-      } catch (error) {
-        showError('Failed to delete task');
-      }
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Completed':
-        return <CheckCircleIcon color="success" />;
-      case 'In Progress':
-        return <ScheduleIcon color="warning" />;
-      case 'Failed':
-        return <WarningIcon color="error" />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <MainLayout>
-      <Box sx={{ p: 3 }}>
-        <PageHeader
-          title="Process Details"
-          action={{
-            label: 'Edit Process',
-            icon: <EditIcon />,
-            onClick: handleEdit,
-          }}
-        />
-
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Process Information
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Process Type
-                  </Typography>
-                  <Typography variant="body1">{process.processType}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Chip
-                    label={process.status}
-                    color={
-                      process.status === 'Completed'
-                        ? 'success'
-                        : process.status === 'In Progress'
-                        ? 'warning'
-                        : 'error'
-                    }
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Start Date
-                  </Typography>
-                  <Typography variant="body1">
-                    {format(new Date(process.startDate), 'PPP')}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Expected End Date
-                  </Typography>
-                  <Typography variant="body1">
-                    {process.expectedEndDate
-                      ? format(new Date(process.expectedEndDate), 'PPP')
-                      : 'N/A'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Total Budget
-                  </Typography>
-                  <Typography variant="body1">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'USD',
-                    }).format(process.totalBudget)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Current Spent
-                  </Typography>
-                  <Typography variant="body1">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'USD',
-                    }).format(process.currentSpent)}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Paper>
-
-            <Paper sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Process Stages</Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => router.push(`/business/${id}/stages/new`)}
-                >
-                  Add Stage
-                </Button>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              <Stepper orientation="vertical">
-                {process.stages.map((stage) => (
-                  <Step key={stage.id} active={true}>
-                    <StepLabel
-                      icon={getStatusIcon(stage.status)}
-                      optional={
-                        <Typography variant="caption">
-                          {format(new Date(stage.startDate), 'PPP')}
-                        </Typography>
-                      }
-                    >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1">{stage.name}</Typography>
-                        <Box>
-                          <Tooltip title="Edit Stage">
-                            <IconButton
-                              size="small"
-                              onClick={() => router.push(`/business/${id}/stages/${stage.id}/edit`)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Stage">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteStage(stage.id!)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Box>
-                    </StepLabel>
-                    <StepContent>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {stage.notes}
-                        </Typography>
-                      </Box>
-                      <List>
-                        {stage.tasks.map((task) => (
-                          <ListItem
-                            key={task.id}
-                            secondaryAction={
-                              <Box>
-                                <Tooltip title="Edit Task">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      router.push(
-                                        `/business/${id}/stages/${stage.id}/tasks/${task.id}/edit`
-                                      )
-                                    }
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete Task">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleDeleteTask(task.id!)}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
-                            }
-                          >
-                            <ListItemText
-                              primary={task.name}
-                              secondary={
-                                <>
-                                  <Typography variant="caption" display="block">
-                                    {format(new Date(task.startDate), 'PPP')}
-                                  </Typography>
-                                  <Chip
-                                    label={task.status}
-                                    size="small"
-                                    color={
-                                      task.status === 'Completed'
-                                        ? 'success'
-                                        : task.status === 'In Progress'
-                                        ? 'warning'
-                                        : 'error'
-                                    }
-                                  />
-                                </>
-                              }
-                            />
-                          </ListItem>
-                        ))}
-                      </List>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() =>
-                          router.push(`/business/${id}/stages/${stage.id}/tasks/new`)
+    return (
+        <div className="p-6">
+            <Row gutter={[16, 16]}>
+                <Col span={24}>
+                    <Card
+                        title="业务基本信息"
+                        extra={
+                            <Button type="primary" onClick={() => router.push(`/business/edit/${business.id}`)}>
+                                编辑
+                            </Button>
                         }
-                        sx={{ mt: 2 }}
-                      >
-                        Add Task
-                      </Button>
-                    </StepContent>
-                  </Step>
-                ))}
-              </Stepper>
-            </Paper>
-          </Grid>
+                    >
+                        <Descriptions bordered>
+                            <Descriptions.Item label="客户名称">{business.customerName}</Descriptions.Item>
+                            <Descriptions.Item label="业务类型">{business.businessType}</Descriptions.Item>
+                            <Descriptions.Item label="当前阶段">
+                                <Tag color={getPhaseColor(business.currentPhase)}>{business.currentPhase}</Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="状态">
+                                <Tag color={business.status === BusinessStatus.NORMAL ? 'green' : 'red'}>
+                                    {business.status}
+                                </Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="地区">{business.location}</Descriptions.Item>
+                            <Descriptions.Item label="总金额">¥{business.totalAmount.toLocaleString()}</Descriptions.Item>
+                            <Descriptions.Item label="开始日期">{new Date(business.startDate).toLocaleDateString()}</Descriptions.Item>
+                            <Descriptions.Item label="预计结束日期">{new Date(business.expectedEndDate).toLocaleDateString()}</Descriptions.Item>
+                            {business.actualEndDate && (
+                                <Descriptions.Item label="实际结束日期">
+                                    {new Date(business.actualEndDate).toLocaleDateString()}
+                                </Descriptions.Item>
+                            )}
+                            {business.remark && (
+                                <Descriptions.Item label="备注" span={3}>
+                                    {business.remark}
+                                </Descriptions.Item>
+                            )}
+                        </Descriptions>
+                    </Card>
+                </Col>
 
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Customer Information
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              {customer && (
-                <List>
-                  <ListItem>
-                    <ListItemText
-                      primary="Name"
-                      secondary={customer.name}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText
-                      primary="Email"
-                      secondary={customer.email}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText
-                      primary="Phone"
-                      secondary={customer.phone}
-                    />
-                  </ListItem>
-                </List>
-              )}
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => router.push(`/customers/${process.customerId}`)}
-              >
-                View Customer Details
-              </Button>
-            </Paper>
+                <Col span={12}>
+                    <Card title="状态变更记录">
+                        <Timeline
+                            items={statusRecords.map(record => ({
+                                color: record.isAbnormal ? 'red' : 'blue',
+                                children: (
+                                    <div key={record.id}>
+                                        <p>
+                                            {record.previousPhase} → {record.currentPhase}
+                                            {record.isAbnormal && <Tag color="red" className="ml-2">异常</Tag>}
+                                        </p>
+                                        <p className="text-gray-500">操作人: {record.operator}</p>
+                                        {record.remark && <p className="text-gray-500">备注: {record.remark}</p>}
+                                        {record.isAbnormal && (
+                                            <>
+                                                <p className="text-red-500">异常原因: {record.abnormalReason}</p>
+                                                <p className="text-green-500">解决方案: {record.solution}</p>
+                                            </>
+                                        )}
+                                        <p className="text-gray-400">{new Date(record.createdAt!).toLocaleString()}</p>
+                                    </div>
+                                ),
+                            }))}
+                        />
+                    </Card>
+                </Col>
 
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Documents
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <List>
-                {process.documentUrls.map((url, index) => (
-                  <ListItem key={index}>
-                    <ListItemText
-                      primary={`Document ${index + 1}`}
-                      secondary={url}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-    </MainLayout>
-  );
-} 
+                <Col span={12}>
+                    <Card title="营销记录">
+                        <Table
+                            dataSource={marketingRecords}
+                            columns={[
+                                {
+                                    title: '渠道',
+                                    dataIndex: 'channel',
+                                    key: 'channel',
+                                },
+                                {
+                                    title: '费用',
+                                    dataIndex: 'cost',
+                                    key: 'cost',
+                                    render: (cost: number) => `¥${cost.toLocaleString()}`,
+                                },
+                                {
+                                    title: '转化来源',
+                                    dataIndex: 'conversionSource',
+                                    key: 'conversionSource',
+                                },
+                                {
+                                    title: '生效日期',
+                                    dataIndex: 'effectiveDate',
+                                    key: 'effectiveDate',
+                                    render: (date: string) => new Date(date).toLocaleDateString(),
+                                },
+                            ]}
+                            rowKey="id"
+                            pagination={false}
+                            scroll={{ y: 240 }}
+                        />
+                    </Card>
+                </Col>
+
+                <Col span={24}>
+                    <Card title="医疗记录">
+                        <Table
+                            dataSource={medicalRecords}
+                            columns={[
+                                {
+                                    title: '记录类型',
+                                    dataIndex: 'recordType',
+                                    key: 'recordType',
+                                },
+                                {
+                                    title: '医院',
+                                    dataIndex: 'hospitalName',
+                                    key: 'hospitalName',
+                                },
+                                {
+                                    title: '医生',
+                                    dataIndex: 'doctorName',
+                                    key: 'doctorName',
+                                },
+                                {
+                                    title: '检查日期',
+                                    dataIndex: 'checkDate',
+                                    key: 'checkDate',
+                                    render: (date: string) => new Date(date).toLocaleDateString(),
+                                },
+                                {
+                                    title: '异常标记',
+                                    dataIndex: 'abnormalFlags',
+                                    key: 'abnormalFlags',
+                                    render: (flags: string[]) => flags.map(flag => (
+                                        <Tag color="red" key={flag}>{flag}</Tag>
+                                    )),
+                                },
+                                {
+                                    title: '操作',
+                                    key: 'action',
+                                    render: (_, record: MedicalRecordDTO) => (
+                                        <Button type="link" onClick={() => window.open(record.reportFiles[0])}>
+                                            查看报告
+                                        </Button>
+                                    ),
+                                },
+                            ]}
+                            rowKey="id"
+                            expandable={{
+                                expandedRowRender: (record) => (
+                                    <div>
+                                        <p>报告内容：{record.reportContent}</p>
+                                        {record.followUpActions && <p>后续行动：{record.followUpActions}</p>}
+                                    </div>
+                                ),
+                            }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+        </div>
+    );
+};
+
+export default BusinessDetail; 
